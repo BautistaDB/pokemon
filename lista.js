@@ -3,34 +3,39 @@
             const responseList = await fetch(urlPagina)
             
             const pageInfo = await responseList.json();
-
-            const pokemonsInfo = await Promise.all(
+            
+            pageInfo.results = await Promise.all(
                 pageInfo.results.map(
                     async (pokemon) => { // pokemon: { name: string, url: string (URL getById) }
+                        const response = await fetch(pokemon.url);
+                        const datosDelPokemon = await response.json();
+                        console.log(datosDelPokemon)
+                        
+                        // Crear tarjeta 
+                        const pokemonInfo = {
+                            imagen: datosDelPokemon.sprites.front_default,
+                            nombre: datosDelPokemon.name,
+                            id: datosDelPokemon.id,
+                            baseExperiencia: datosDelPokemon.base_experience,
+                            altura: datosDelPokemon.height,
+                        }
 
-                        const response = await fetch();
-
+                        lista.append(crearTarjeta(pokemonInfo));
+                        
+                        
                         return datosDelPokemon;
-
                     }
                 )
             );
-
-            console.log(pokemonsInfo);
-
+            console.log(pageInfo);
+            
             return pageInfo;
         }catch(error){
             console.log(error)
         }
     }
-    
-    const lista = document.getElementById("lista");
-    
-    
-    let infoPagina = cargarPagina("https://pokeapi.co/api/v2/pokemon?limit=10");
 
-    //... más código
-    infoPagina = cargarPagina(infoPagina.next);
+    cargarPagina("https://pokeapi.co/api/v2/pokemon?limit=10").then(actualizarPaginacion).catch(err => err/*Manejo de errores*/);
 
     function crearTarjeta(pokemonInfo){
         const tarjeta = document.createElement("li");
@@ -39,16 +44,16 @@
         imagen.src = pokemonInfo.imagen; //url de la imagen
 
         const titulo = document.createElement("h3");
-        titulo.textContent = pokemonInfo.nombre;
+        titulo.textContent = pokemonInfo.nombre.toUpperCase();
 
         const id = document.createElement("p");
-        id.textContent = pokemonInfo.id
+        id.textContent = "Id: " + pokemonInfo.id
 
         const baseExperiencia = document.createElement("p");
-        baseExperiencia.textContent = pokemonInfo.baseExperiencia;
+        baseExperiencia.textContent = "Experiencia Base: " + pokemonInfo.baseExperiencia;
 
         const altura = document.createElement("p");
-        altura.textContent = pokemonInfo.altura;
+        altura.textContent = "Altura: " + pokemonInfo.altura + "cm";
 
         tarjeta.append(imagen, titulo, id, baseExperiencia,altura);
         tarjeta.classList.add("card");
@@ -56,10 +61,28 @@
         return tarjeta;
     }
 
-    lista.appendChild(crearTarjeta({
-        imagen: "https://i.pinimg.com/736x/bf/95/34/bf953419d76bf747cba69b55e6e03957.jpg",
-        nombre: "pikachu",
-        id: "1",
-        baseExperiencia: "60",
-        altura: "100",
-    }))
+const btnAnterior = document.getElementById('anterior');
+const btnSiguiente = document.getElementById('siguiente');
+
+btnAnterior.addEventListener('click', () =>{
+    lista.innerHTML = '';
+    cargarPagina(infoPagina.previous).then(actualizarPaginacion);
+})
+
+btnSiguiente.addEventListener('click', () =>{
+    lista.innerHTML = '';
+    cargarPagina(infoPagina.next).then(actualizarPaginacion);
+});
+
+function actualizarPaginacion(infoPagina) {
+ 
+    if (!infoPagina.previous) {
+        btnAnterior.disabled = true;
+    }
+
+    if (!infoPagina.next) {
+        btnSiguiente.disabled = true;  
+    }
+}
+
+
